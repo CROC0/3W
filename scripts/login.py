@@ -1,7 +1,9 @@
-from flask import redirect, session
 from functools import wraps
 
+from flask import redirect, session
+
 from db import db
+
 
 def login_required(f):
     """
