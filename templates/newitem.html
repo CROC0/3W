@@ -1,0 +1,37 @@
+﻿{% extends "layout.html" %}
+
+{% block title %}
+    New Item
+{% endblock %}
+
+{% block main %}
+  <h1 class="container">{{ who }}</h1>
+
+  <form action="/newitem" method="post">
+      <div class="form-group">
+          <input autocomplete="off" autofocus class="form-control" name="what" placeholder="What" type="text" />
+      </div>
+
+      <div class="form-group">
+          <input class="form-control" name="when" placeholder="When" type="date" />
+      </div>
+      <div class="form-group">
+          <select name="who">
+            {% for user in users %}
+              <option value="{{ user }}">{{ user }}</option>
+            {% endfor %}
+          </select>
+      </div>
+
+      <div class="form-group">
+          <input autocomplete="off" autofocus class="form-control" name="detail" placeholder="Detail" type="text" />
+      </div>
+      <button class="btn btn-primary" type="submit">Add Item</button>
+  </form>
+
+
+  <script>
+
+  </script>
+
+{% endblock %}

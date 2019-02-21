@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    3W Manager
+{% endblock %}
+
+{% block main %}
+
+<style>
+
+</style>
+
+<h1>{{ who }}</h1>
+
+
+    <table class="table table-bordered">
+        <thead class="thead-dark">
+        <th scope="col">Item #</th>
+        <th scope="col">What</th>
+        <th scope="col">Who</th>
+        <th scope="col">When</th>
+        <th scope="col">Status</th>
+        <th scope="col">Detailed Update</th>
+        <th scope="col">Requester</th>
+        </thead>
+
+    {% for item in items %}
+
+    <tr>  
+      <td>{{ item['id'] }}</td>
+      <td>{{ item['what'] }}</td>
+      <td>{{ item['who'] }}</td>
+      <td>{{ item['when'] }}</td>
+      <td>{{ item['stat'] }}</td>
+      <td>{{ item['detail'] }}</td>
+      <td>{{ item['requester'] }}</td>
+    </tr>
+
+
+
+    </table>
+
+    <a href="/complete/{{item['id']}}" value="compare" type="submit" class="btn btn-primary">Complete</a>
+    <a href="/delete/{{item['id']}}" value="delete" type="submit" class="btn btn-danger">Delete</a>
+
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#UpdateModal">
+            Update Entry
+          </button>
+
+
+
+    <div class="modal fade" id="UpdateModal" tabindex="-1" role="dialog" aria-labelledby="UpdateModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="UpdateModalLabel">Modal title</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                    <form action="/update/{{ item['id'] }}" method="POST">
+                        <input type="text" name="detail" />
+
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </form>  
+              </div>
+            </div>
+          </div>
+
+          {% endfor %}
+<script>
+
+
+</script>
+{% endblock %}
