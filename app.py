@@ -1,7 +1,6 @@
 import os
 
 from flask import Flask, flash, redirect, render_template, request, session
-from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
@@ -57,7 +56,7 @@ def login():
         user = UserModel.find_by_username(name)
 
         if not user or not check_password_hash(user.password, password):
-            flash("username or password not correct, please try again", 'error')
+            flash("username or password not correct", 'error')
             return render_template("/login.html")
 
         # Remember which user has logged in
@@ -74,10 +73,8 @@ def login():
 @app.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
-
     # forget user_id
     session.clear()
-
     return redirect("/")
 
 
@@ -114,7 +111,9 @@ def register():
         user = UserModel(username, name, password, supervisor)
 
         if user.find_by_username(name):
-            flash("Username already exists, please log in with your email", 'error')
+            flash("Username already exists, please log in with your email",
+                  'error')
+
             return render_template("register.html", users=users)
 
         user.save_to_db()
@@ -130,13 +129,8 @@ def register():
 @login_required
 def manager():
     user = UserModel.find_by_id(session["user_id"])
-
-    items = ItemModel.listItems()
+    items = ItemModel.listItems(user.id)
     item_list = [item.manage() for item in items]
-    empty_list = []
-    subordinate_items = ItemModel.subordinateListItems(user.name, empty_list)
-
-    item_list = item_list + subordinate_items
 
     return render_template("/manager.html", who=user, items=item_list)
 
@@ -155,13 +149,14 @@ def item(item):
 @login_required
 def update(item_id):
     user = UserModel.find_by_id(session["user_id"])
-    initials = user.name.split(" ")
+    first_name = user.name.split(" ")
     detail = request.form.get("detail")
 
     item = ItemModel.find_by_id(item_id)
     tmp = item.detail
     time = datetime.now()
-    item.detail = tmp + " - " + time.strftime('%d/%m/%Y') + " ({}): ".format(initials[0]) + detail
+    time = time.strftime('%d/%m/%Y')
+    item.detail = tmp + " - " + time + " ({}): ".format(first_name[0]) + detail
 
     item.save_to_db()
 

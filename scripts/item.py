@@ -1,7 +1,7 @@
 from db import db
-from flask import session
 from datetime import datetime
 from scripts.login import UserModel
+
 
 class ItemModel(db.Model):
 
@@ -48,25 +48,18 @@ class ItemModel(db.Model):
         return cls.query.filter_by(id=_id).first()
 
     @classmethod
-    def listItems(cls):
-        return cls.query.filter_by(who_id=session['user_id']).all()
+    def listItems(cls, _id):
+        items = cls.query.filter_by(who_id=_id).all()
+        subordinates = UserModel.find_subordinate_list(_id)
+
+        for person in subordinates:
+            if person:
+                items = items + cls.listItems(person)
+        return items
 
     @classmethod
     def listItem(cls, item):
         return cls.query.filter_by(id=item).all()
-      
-    @classmethod
-    def subordinateListItems(cls, name, subordinate_list):
-        id_list = UserModel.find_subordinate_list(name)
-        print("this is running initial")
-        for _id in id_list:
-            objects = cls.query.filter_by(who_id=_id).all()
-            subordinate_list = subordinate_list + [item.manage() for item in objects]
-            name2 = UserModel.find_by_id(_id)
-            if name2:
-                cls.subordinateListItems(name2.name, subordinate_list)
-                print("this is running recursive")
-        return subordinate_list
 
     def check_status(self):
         if datetime.strptime(self.when, '%Y-%m-%d') < datetime.now():

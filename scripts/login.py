@@ -54,8 +54,9 @@ class UserModel(db.Model):
         return cls.query.filter_by(id=_id).first()
 
     @classmethod
-    def find_subordinate_list(cls, name):
-        subordinate = cls.query.filter_by(supervisor=name).all()
+    def find_subordinate_list(cls, _id):
+        name = cls.find_by_id(_id)
+        subordinate = cls.query.filter_by(supervisor=name.name).all()
         return ([sub.id for sub in subordinate])
 
     @classmethod
