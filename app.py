@@ -133,8 +133,8 @@ def manager():
 
     items = ItemModel.listItems()
     item_list = [item.manage() for item in items]
-
-    subordinate_items = ItemModel.subordinateListItems(user.find_subordinate_list(user.name))
+    empty_list = []
+    subordinate_items = ItemModel.subordinateListItems(user.name, empty_list)
 
     item_list = item_list + subordinate_items
 

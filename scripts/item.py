@@ -4,6 +4,7 @@ from datetime import datetime
 from scripts.login import UserModel
 
 class ItemModel(db.Model):
+
     __tablename__ = 'manager'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -14,7 +15,7 @@ class ItemModel(db.Model):
     who_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     complete = db.Column(db.Boolean())
 
-    def __init__(self,what,when,who_id,detail,requester,complete):
+    def __init__(self, what, when, who_id, detail, requester, complete):
         self.what = what
         self.when = when
         self.who_id = who_id
@@ -34,13 +35,12 @@ class ItemModel(db.Model):
                 'complete': self.complete
                 }
 
-
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
 
     @classmethod
-    def find_by_what(cls,what):
+    def find_by_what(cls, what):
         return cls.query.filter_by(what=what).first()
 
     @classmethod
@@ -52,18 +52,23 @@ class ItemModel(db.Model):
         return cls.query.filter_by(who_id=session['user_id']).all()
 
     @classmethod
-    def listItem(cls,item):
+    def listItem(cls, item):
         return cls.query.filter_by(id=item).all()
-
+      
     @classmethod
-    def subordinateListItems(cls,ids):
-        subordinate_list = []
-        for _id in ids:
-            tmp_object = cls.query.filter_by(who_id=_id).all()
-            subordinate_list = subordinate_list + [item.manage() for item in tmp_object]
+    def subordinateListItems(cls, name, subordinate_list):
+        id_list = UserModel.find_subordinate_list(name)
+        print("this is running initial")
+        for _id in id_list:
+            objects = cls.query.filter_by(who_id=_id).all()
+            subordinate_list = subordinate_list + [item.manage() for item in objects]
+            name2 = UserModel.find_by_id(_id)
+            if name2:
+                cls.subordinateListItems(name2.name, subordinate_list)
+                print("this is running recursive")
         return subordinate_list
 
     def check_status(self):
-        if datetime.strptime(self.when,'%Y-%m-%d') < datetime.now():
+        if datetime.strptime(self.when, '%Y-%m-%d') < datetime.now():
             return "Overdue"
         return "WIP"
