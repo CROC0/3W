@@ -4,7 +4,6 @@ from flask import Flask, flash, redirect, render_template, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
-
 from scripts.login import UserModel, login_required
 from scripts.item import ItemModel
 
@@ -116,8 +115,10 @@ def register():
 
             return render_template("register.html", users=users)
 
+        # adds user to the database
         user.save_to_db()
 
+        # remembers the user id in sessions to allow access to other pages.
         session["user_id"] = user.id
 
         return redirect('/')
@@ -143,6 +144,16 @@ def item(item):
     item_list = [item.manage() for item in items]
 
     return render_template("/item.html", who=user, items=item_list)
+
+
+@app.route("/completeditems")
+@login_required
+def completedItems():
+    user = UserModel.find_by_id(session["user_id"])
+    completedItems = ItemModel.listCompletedItems()
+    item_list = [item.manage() for item in completedItems]
+
+    return render_template("/completeditems.html", who=user, items=item_list)
 
 
 @app.route("/update/<int:item_id>", methods=["POST"])

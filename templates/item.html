@@ -6,9 +6,7 @@
 
 {% block main %}
 
-<style>
 
-</style>
 
 <h1>{{ who }}</h1>
 
@@ -27,13 +25,13 @@
     {% for item in items %}
         
     <tr>  
-      <td>{{ item['id'] }}</td>
-      <td>{{ item['what'] }}</td>
-      <td>{{ item['who'] }}</td>
-      <td>{{ item['when'] }}</td>
-      <td>{{ item['stat'] }}</td>
-      <td>{{ item['detail'] }}</td>
-      <td>{{ item['requester'] }}</td>
+      <td width="5%">{{ item['id'] }}</a>
+      <td width="15%">{{ item['what'] }}</td>
+      <td width="10%">{{ item['who'] }}</td>
+      <td width="10%">{{ item['when'] }}</td>
+      <td width="10%" class="{{item['stat']}}">{{ item['stat'] }}</td>
+      <td width="40%">{{ item['detail'] }}</td>
+      <td width="10%">{{ item['requester'] }}</td>
     </tr>
 
 

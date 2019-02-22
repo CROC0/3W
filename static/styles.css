@@ -31,7 +31,31 @@ main {
     text-align: center;
 }
 
-    main img {
-        /* constrain images on small screens */
-        max-width: 100%;
-    }
+main img {
+    /* constrain images on small screens */
+    max-width: 100%;
+}
+
+td {
+    padding: 0px;
+}
+td a {
+    display: block;
+    color: black;
+}
+tr:hover { 
+    background: rgb(199, 196, 196);
+    color: blue;
+}
+
+.Overdue {
+    background: red;
+}
+
+.WIP {
+    background: rgba(255, 166, 0, 0.589);
+}
+
+.Complete {
+    background: green;
+}

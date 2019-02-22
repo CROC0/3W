@@ -6,29 +6,6 @@
 
 {% block main %}
 
-<style>
-    td {
-        padding: 0px;
-    }
-    td a {
-        display: block;
-        color: black;
-    }
-    tr:hover { 
-        background: grey;
-        color: blue;
-    }
-
-    .Overdue {
-        background: red;
-    }
-
-    .WIP {
-        background: rgba(255, 166, 0, 0.589);
-    }
-
-</style>
-
 <h1>{{ who }}</h1>
 
 <a href="/newitem" class="btn btn-primary m-2">New Item</a>
@@ -49,14 +26,13 @@
         {% if not item['complete'] %}
         
     <tr>  
-      <td><a href="/item/{{item['id']}}">{{ item['id'] }}</td></a>
-      <td><a href="/item/{{item['id']}}">{{ item['what'] }}</a></td>
-      <td><a href="/item/{{item['id']}}">{{ item['who'] }}</a></td>
-      <td><a href="/item/{{item['id']}}">{{ item['when'] }}</a></td>
-      <td class="{{item['stat']}}"><a href="/item/{{item['id']}}">{{ item['stat'] }}</a></td>
-      <td><a href="/item/{{item['id']}}">{{ item['detail'] }}</a></td>
-      <td><a href="/item/{{item['id']}}">{{ item['requester'] }}</a></td>
-
+      <td width="5%"><a href="/item/{{item['id']}}">{{ item['id'] }}</td></a>
+      <td width="15%"><a href="/item/{{item['id']}}">{{ item['what'] }}</a></td>
+      <td width="10%"><a href="/item/{{item['id']}}">{{ item['who'] }}</a></td>
+      <td width="10%"><a href="/item/{{item['id']}}">{{ item['when'] }}</a></td>
+      <td width="10%" class="{{item['stat']}}"><a href="/item/{{item['id']}}">{{ item['stat'] }}</a></td>
+      <td width="40%"><a href="/item/{{item['id']}}">{{ item['detail'] }}</a></td>
+      <td width="10%"><a href="/item/{{item['id']}}">{{ item['requester'] }}</a></td>
     </tr>
         {% endif %}
     {% endfor %}

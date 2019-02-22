@@ -22,9 +22,9 @@
         <div class="collapse navbar-collapse" id="navbar">
             {% if session.user_id %}
             <ul class="navbar-nav mr-auto mt-2">
-                <li class="nav-item"><a class="nav-link" href="{{url_for("manager")}}">3W Manager</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for("newitem")}}">New Item</a></li>
-
+                <li class="nav-item"><a class="nav-link" href="{{url_for("manager") }}">3W Manager</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for("completedItems") }}">Completed Items</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for("newitem") }}">New Item</a></li>
             </ul>
             <ul class="navbar-nav ml-auto mt-2">
                 <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
@@ -48,7 +48,7 @@
     </header>
     {% endif %}
 
-    <main class="container p-5">
+    <main class="p-3">
         {% block main %}{% endblock %}
     </main>
 

@@ -58,10 +58,17 @@ class ItemModel(db.Model):
         return items
 
     @classmethod
+    def listCompletedItems(cls):
+        return cls.query.filter_by(complete=True).all()
+
+    @classmethod
     def listItem(cls, item):
         return cls.query.filter_by(id=item).all()
 
     def check_status(self):
-        if datetime.strptime(self.when, '%Y-%m-%d') < datetime.now():
-            return "Overdue"
-        return "WIP"
+        if self.complete:
+            return "Complete"
+        else:
+            if datetime.strptime(self.when, '%Y-%m-%d') < datetime.now():
+                return "Overdue"
+            return "WIP"
