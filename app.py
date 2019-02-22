@@ -17,11 +17,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'fdshfdshr324oi3hhr'
 
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
-
 @app.after_request
 def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
