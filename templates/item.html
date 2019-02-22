@@ -25,7 +25,7 @@
         </thead>
 
     {% for item in items %}
-
+        
     <tr>  
       <td>{{ item['id'] }}</td>
       <td>{{ item['what'] }}</td>
@@ -41,7 +41,6 @@
     </table>
 
     <a href="/complete/{{item['id']}}" value="compare" type="submit" class="btn btn-primary">Complete</a>
-    <a href="/delete/{{item['id']}}" value="delete" type="submit" class="btn btn-danger">Delete</a>
 
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#UpdateModal">
             Update Entry
@@ -71,6 +70,7 @@
               </div>
             </div>
           </div>
+
 
           {% endfor %}
 <script>

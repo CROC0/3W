@@ -7,6 +7,9 @@
 {% block main %}
 
 <style>
+    td {
+        padding: 0px;
+    }
     td a {
         display: block;
         color: black;
@@ -43,9 +46,10 @@
         </thead>
 
     {% for item in items %}
-
+        {% if not item['complete'] %}
+        
     <tr>  
-      <td><a href="/item/{{item['id']}}">{{ item['id'] }}</a></td>
+      <td><a href="/item/{{item['id']}}">{{ item['id'] }}</td></a>
       <td><a href="/item/{{item['id']}}">{{ item['what'] }}</a></td>
       <td><a href="/item/{{item['id']}}">{{ item['who'] }}</a></td>
       <td><a href="/item/{{item['id']}}">{{ item['when'] }}</a></td>
@@ -54,7 +58,7 @@
       <td><a href="/item/{{item['id']}}">{{ item['requester'] }}</a></td>
 
     </tr>
-
+        {% endif %}
     {% endfor %}
 
     </table>

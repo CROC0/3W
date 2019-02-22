@@ -11,7 +11,7 @@ class ItemModel(db.Model):
     when = db.Column(db.String())
     requester = db.Column(db.String(180))
     detail = db.Column(db.String(5000))
-    who_id = db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
+    who_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     complete = db.Column(db.Boolean())
 
     def __init__(self,what,when,who_id,detail,requester,complete):
@@ -30,7 +30,8 @@ class ItemModel(db.Model):
                 'who': UserModel.find_by_id(self.who_id),
                 'stat': self.check_status(),
                 'detail': self.detail,
-                'requester': UserModel.find_by_id(self.requester)
+                'requester': UserModel.find_by_id(self.requester),
+                'complete': self.complete
                 }
 
 

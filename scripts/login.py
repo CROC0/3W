@@ -28,7 +28,7 @@ class UserModel(db.Model):
     password = db.Column(db.String(80))
     supervisor = db.Column(db.String(80))
 
-    def __init__(self,username,name,password,supervisor):
+    def __init__(self, username, name, password, supervisor):
         self.username = username
         self.name = name
         self.password = password
@@ -42,11 +42,11 @@ class UserModel(db.Model):
         db.session.commit()
 
     @classmethod
-    def find_by_username(cls,username):
+    def find_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
 
     @classmethod
-    def find_by_name(cls,name):
+    def find_by_name(cls, name):
         return cls.query.filter_by(name=name).first()
 
     @classmethod
@@ -54,7 +54,7 @@ class UserModel(db.Model):
         return cls.query.filter_by(id=_id).first()
 
     @classmethod
-    def find_subordinate_list(cls,name):
+    def find_subordinate_list(cls, name):
         subordinate = cls.query.filter_by(supervisor=name).all()
         print([sub.id for sub in subordinate])
         return ([sub.id for sub in subordinate])

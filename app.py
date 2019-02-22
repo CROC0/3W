@@ -1,8 +1,7 @@
 import os
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for, jsonify
+from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
-from werkzeug.exceptions import default_exceptions
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
@@ -12,13 +11,18 @@ from scripts.item import ItemModel
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL','sqlite:///data.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+                                                        'DATABASE_URL',
+                                                        'sqlite:///data.db'
+                                                        )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'fdshfdshr324oi3hhr'
+
 
 @app.before_first_request
 def create_tables():
     db.create_all()
+
 
 @app.after_request
 def after_request(response):
@@ -27,31 +31,33 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
+
 @app.route('/')
 @login_required
 def index():
-  #  user = UserModel.find_by_id(session["user_id"])
+    # user = UserModel.find_by_id(session["user_id"])
     return render_template("/index.html")
 
-@app.route("/login", methods=["GET","POST"])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    #clear any user id
+    # clear any user id
     session.clear()
     if request.method == "POST":
         name = request.form.get("username")
         password = request.form.get("password")
         # Ensure username was submitted
         if not name:
-            flash("Username is not entered",'error')
+            flash("Username is not entered", 'error')
             return render_template("/login.html")
         elif not password:
-            flash("Password is not entered",'error')
+            flash("Password is not entered", 'error')
             return render_template("/login.html")
 
         user = UserModel.find_by_username(name)
 
-        if not user or not check_password_hash(user.password,password):
-            flash("username or password not correct, please try again",'error')
+        if not user or not check_password_hash(user.password, password):
+            flash("username or password not correct, please try again", 'error')
             return render_template("/login.html")
 
         # Remember which user has logged in
@@ -64,51 +70,52 @@ def login():
     else:
         return render_template("login.html")
 
-@app.route("/logout", methods=["GET","POST"])
+
+@app.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
 
-    #forget user_id
+    # forget user_id
     session.clear()
 
     return redirect("/")
 
-@app.route("/register", methods=["GET","POST"])
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
     users = UserModel.listUsers()
 
     if request.method == 'POST':
 
-        #forget any user.id
+        # forget any user.id
         session.clear()
-        #import username and save as name
+        # import username and save as name
         username = request.form.get("username")
         password = request.form.get("password")
         name = request.form.get("name")
         supervisor = request.form.get("supervisor")
         # ensure username is not blank
         if not username:
-            flash("Please enter an email address as your username",'error')
-            return render_template("register.html",users=users)
+            flash("Please enter an email address as your username", 'error')
+            return render_template("register.html", users=users)
         # ensure password is not blank
         elif not password:
-            flash("Please provide a valid password",'error')
-            return render_template("register.html",users=users)
+            flash("Please provide a valid password", 'error')
+            return render_template("register.html", users=users)
         elif not name:
-            flash("Please provide a valid name",'error')
-            return render_template("register.html",users=users)
+            flash("Please provide a valid name", 'error')
+            return render_template("register.html", users=users)
         elif not supervisor:
-            flash("Please provide a valid supervisor",'error')
-            return render_template("register.html",users=users)
+            flash("Please provide a valid supervisor", 'error')
+            return render_template("register.html", users=users)
 
         password = generate_password_hash(password)
 
-        user = UserModel(username,name,password,supervisor)
+        user = UserModel(username, name, password, supervisor)
 
         if user.find_by_username(name):
-            flash("Username already exists, please log in with your email",'error')
-            return render_template("register.html",users=users)
-
+            flash("Username already exists, please log in with your email", 'error')
+            return render_template("register.html", users=users)
 
         user.save_to_db()
 
@@ -116,10 +123,10 @@ def register():
 
         return redirect('/')
     else:
-        
-        return render_template('/register.html',users=users)
+        return render_template('/register.html', users=users)
 
-@app.route("/manager", methods=["GET","POST"])
+
+@app.route("/manager", methods=["GET", "POST"])
 @login_required
 def manager():
     user = UserModel.find_by_id(session["user_id"])
@@ -131,7 +138,7 @@ def manager():
 
     item_list = item_list + subordinate_items
 
-    return render_template("/manager.html",who=user,items=item_list)
+    return render_template("/manager.html", who=user, items=item_list)
 
 
 @app.route("/item/<int:item>")
@@ -141,23 +148,27 @@ def item(item):
     items = ItemModel.listItem(item)
     item_list = [item.manage() for item in items]
 
-    return render_template("/item.html",who=user,items=item_list)
+    return render_template("/item.html", who=user, items=item_list)
 
-@app.route("/update/<int:item_id>",methods=["POST"])
+
+@app.route("/update/<int:item_id>", methods=["POST"])
 @login_required
 def update(item_id):
+    user = UserModel.find_by_id(session["user_id"])
+    initials = user.name.split(" ")
     detail = request.form.get("detail")
-    
+
     item = ItemModel.find_by_id(item_id)
     tmp = item.detail
     time = datetime.now()
-    item.detail = tmp + " - " + time.strftime('%d/%m/%Y') + ": " + detail
+    item.detail = tmp + " - " + time.strftime('%d/%m/%Y') + " ({}): ".format(initials[0]) + detail
 
     item.save_to_db()
 
     return redirect('/item/{}'.format(item_id))
 
-@app.route("/newitem",methods=["GET","POST"])
+
+@app.route("/newitem", methods=["GET", "POST"])
 @login_required
 def newitem():
     user = UserModel.find_by_id(session["user_id"])
@@ -169,17 +180,16 @@ def newitem():
         detail = request.form.get("detail")
         who = UserModel.find_by_name(request.form.get("who"))
         time = datetime.now()
-        
+
         detail = time.strftime('%d/%m/%Y') + ": " + detail
-        item = ItemModel(what,when,who.id,detail,user.id,False)
+        item = ItemModel(what, when, who.id, detail, user.id, False)
 
         item.save_to_db()
 
         return redirect("/manager")
     else:
         users = UserModel.listUsers()
-        return render_template("/newitem.html",who=user,users=users)
-
+        return render_template("/newitem.html", who=user, users=users)
 
 
 if __name__ == '__main__':
