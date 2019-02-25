@@ -1,5 +1,4 @@
 from functools import wraps
-
 from flask import redirect, session
 
 from db import db
@@ -25,14 +24,16 @@ class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
     name = db.Column(db.String(80))
-    password = db.Column(db.String(80))
+    password = db.Column(db.String)
     supervisor = db.Column(db.String(80))
+    verified = db.Column(db.Boolean)
 
     def __init__(self, username, name, password, supervisor):
         self.username = username
         self.name = name
         self.password = password
         self.supervisor = supervisor
+        self.verified = False
 
     def __repr__(self):
         return self.name
@@ -52,6 +53,10 @@ class UserModel(db.Model):
     @classmethod
     def find_by_id(cls, _id):
         return cls.query.filter_by(id=_id).first()
+
+    @classmethod
+    def find_by_UUID(cls, UUID):
+        return cls.query.filter_by(uuid=UUID).first()
 
     @classmethod
     def find_subordinate_list(cls, _id):

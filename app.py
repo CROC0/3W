@@ -1,13 +1,24 @@
 import os
 
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import (
+                   Flask,
+                   flash,
+                   redirect,
+                   render_template,
+                   request,
+                   session)
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+from itsdangerous import URLSafeTimedSerializer
+
 
 from scripts.login import UserModel, login_required
 from scripts.item import ItemModel
+from scripts.mail import verify_user, reset_password, mail_settings, mail
+
 
 app = Flask(__name__)
+
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
                                                         'DATABASE_URL',
@@ -16,10 +27,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'fdshfdshr324oi3hhr'
 
-
-@app.before_first_request
-def create_tables():
-    db.create_all()
+app.config.update(mail_settings)
+ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 
 @app.after_request
@@ -33,8 +42,8 @@ def after_request(response):
 @app.route('/')
 @login_required
 def index():
-    # user = UserModel.find_by_id(session["user_id"])
-    return render_template("/index.html")
+
+    return render_template('index.html')
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -50,13 +59,13 @@ def login():
             return render_template("/login.html")
         elif not password:
             flash("Password is not entered", 'error')
-            return render_template("/login.html")
+            return render_template("/account/login.html")
 
         user = UserModel.find_by_username(name)
 
         if not user or not check_password_hash(user.password, password):
             flash("username or password not correct", 'error')
-            return render_template("/login.html")
+            return render_template("/account/login.html")
 
         # Remember which user has logged in
         session["user_id"] = user.id
@@ -66,7 +75,7 @@ def login():
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
-        return render_template("login.html")
+        return render_template("/account/login.html")
 
 
 @app.route("/logout", methods=["GET", "POST"])
@@ -109,7 +118,7 @@ def register():
 
         user = UserModel(username, name, password, supervisor)
 
-        if user.find_by_username(name):
+        if user.find_by_username(username):
             flash("Username already exists, please log in with your email",
                   'error')
 
@@ -121,9 +130,13 @@ def register():
         # remembers the user id in sessions to allow access to other pages.
         session["user_id"] = user.id
 
+        uuid = ts.dumps(user.username, salt='email-confirm-key')
+
+        verify_user(user.username, uuid)
+
         return redirect('/')
     else:
-        return render_template('/register.html', users=users)
+        return render_template('/account/register.html', users=users)
 
 
 @app.route("/manager", methods=["GET", "POST"])
@@ -198,7 +211,83 @@ def newitem():
         return render_template("/newitem.html", who=user, users=users)
 
 
+@app.route("/verify/<string:token>", methods=["GET", "POST"])
+def verify(token):
+
+    email = ts.loads(token, salt="email-confirm-key", max_age=86400)
+
+    user = UserModel.find_by_username(email)
+
+    if user:
+        user.verified = True
+        user.save_to_db()
+
+        flash("Thank you for registering your email", 'message')
+        return redirect('/')
+    else:
+        flash("The link has expired, please try again", 'message')
+        return redirect('/')
+
+
+@app.route("/reset", methods=["GET", "POST"])
+def password_reset_request():
+    if request.method == "POST":
+        email = request.form.get("email")
+        token = ts.dumps(email, salt='recovery-key')
+
+        reset_password(email, token)
+        return "Please check your email for reset url"
+    else:
+        return render_template("/account/reset.html")
+
+
+@app.route("/reset/<string:token>")
+def password_reset(token):
+    email = ts.loads(token, salt="recovery-key", max_age=86400)
+
+    user = UserModel.find_by_username(email)
+
+    if not user:
+        return "your email does not exist"
+
+    if not user.verified:
+        return "your email must be verified"
+
+    return render_template('/account/passwordreset.html', username=email)
+
+
+@app.route("/passwordconfirmed", methods=["GET", "POST"])
+def password_confirmed():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        hpassword = generate_password_hash(password)
+
+        user = UserModel.find_by_username(email)
+
+        if not user.verified:
+            flash('Sorry your email was not verified.')
+            return redirect('/')
+
+        user.password = hpassword
+        user.save_to_db()
+
+        session["user_id"] = user.id
+
+        flash("Password successfully changed", 'message')
+        return redirect('/')
+
+    return redirect('/')
+
+
 if __name__ == '__main__':
     from db import db
+
+    @app.before_first_request
+    def create_tables():
+        db.create_all()
+
     db.init_app(app)
+    mail.init_app(app)
     app.run(port=5000, debug=True)

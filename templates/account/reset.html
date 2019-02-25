@@ -1,0 +1,20 @@
+﻿{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+<h1 class="container">Register new user</h1>
+<form action="/reset" method="post">
+    <div class="form-group">
+        <input autocomplete="off" autofocus class="form-control" name="email" placeholder="e-mail" type="email" />
+    </div>
+    <button class="btn btn-primary" type="submit">Register</button>
+</form>
+
+
+<script>
+</script>
+
+{% endblock %}
