@@ -122,17 +122,23 @@ def register():
             flash("Username already exists, please log in with your email",
                   'error')
 
-            return render_template("register.html", users=users)
-
-        # adds user to the database
-        user.save_to_db()
+            return render_template("account/register.html", users=users)
 
         # remembers the user id in sessions to allow access to other pages.
-        session["user_id"] = user.id
+
 
         uuid = ts.dumps(user.username, salt='email-confirm-key')
 
         verify_user(user.username, uuid)
+
+        # adds user to the database
+        try:
+            user.save_to_db()
+        except:
+            flash("something went wrong, pleae try again")
+            return redirect('/')
+
+        session["user_id"] = user.id
 
         return redirect('/')
     else:
