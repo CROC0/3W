@@ -25,10 +25,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
                                                         'sqlite:///data.db'
                                                         )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'fdshfdshr324oi3hhr'
+app.secret_key = 'fdsfdsfdsffdgfdhgfcewr32432'
 
 app.config.update(mail_settings)
 ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
+URL = os.environ.get('HEROKU_URL', 'http://127.0.0.1:5000/')
 
 
 @app.after_request
