@@ -104,17 +104,17 @@ def register():
         # ensure username is not blank
         if not username:
             flash("Please enter an email address as your username", 'error')
-            return render_template("register.html", users=users)
+            return redirect('/register')
         # ensure password is not blank
         elif not password:
             flash("Please provide a valid password", 'error')
-            return render_template("register.html", users=users)
+            return redirect('/register')
         elif not name:
             flash("Please provide a valid name", 'error')
-            return render_template("register.html", users=users)
+            return redirect('/register')
         elif not supervisor:
             flash("Please provide a valid supervisor", 'error')
-            return render_template("register.html", users=users)
+            return redirect('/register')
 
         password = generate_password_hash(password)
 
@@ -123,23 +123,25 @@ def register():
         if user.find_by_username(username):
             flash("Username already exists, please log in with your email",
                   'error')
-
-            return render_template("account/register.html", users=users)
-
-        # remembers the user id in sessions to allow access to other pages.
-
+            return redirect('/register')
 
         uuid = ts.dumps(user.username, salt='email-confirm-key')
 
-        verify_user(user.username, uuid)
-
+        try:
+            verify_user(user.username, uuid)
+        except Exception:
+            flash('Something went wrong and the user was not created, \
+                   please try again', 'error')
+            return redirect('/register')
+            
         # adds user to the database
         try:
             user.save_to_db()
-        except:
-            flash("something went wrong, pleae try again")
-            return redirect('/')
+        except Exception:
+            flash("something went wrong, please try again", 'error')
+            return redirect('/register')
 
+        # remembers the user id in sessions to allow access to other pages.
         session["user_id"] = user.id
 
         return redirect('/')
