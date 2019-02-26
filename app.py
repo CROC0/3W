@@ -25,7 +25,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
                                                         'sqlite:///data.db'
                                                         )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'fdsfdsfdsffdgfdhgfcewr32432'
+app.secret_key = os.environ.get('SECRET_KEY')
 
 app.config.update(mail_settings)
 ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
