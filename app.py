@@ -10,10 +10,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
+
 from scripts.config import app_settings, mail_settings
 from scripts.login import UserModel, login_required, verify_user
 from scripts.item import ItemModel
 from scripts.mail import reset_password, mail
+from scripts.schedule import tasks_overdue
 
 app = Flask(__name__)
 
@@ -258,11 +260,20 @@ def account_delete():
         return redirect('/')
 
 
-@app.route("/manager", methods=["GET", "POST"])
+@app.route("/manager")
 @login_required
 def manager():
     user = UserModel.find_by_id(session["user_id"])
-    items = ItemModel.listItems(user.id)
+    items = ItemModel.listWhoItems(user.id)
+    item_list = [item.manage() for item in items]
+
+    return render_template("/manager.html", who=user, items=item_list)
+
+
+@app.route('/manager/overdue')
+def overdue_manager():
+    user = "All Users"
+    items = ItemModel.listOverdueItems()
     item_list = [item.manage() for item in items]
 
     return render_template("/manager.html", who=user, items=item_list)
@@ -329,6 +340,11 @@ def newitem():
         users = UserModel.listUsers()
         return render_template("/newitem.html", who=user, users=users)
 
+@app.route('/test')
+def test():
+
+    tasks_overdue(app)
+    return "<a href='/test'>test again</a>"
 
 if __name__ == '__main__':
     from db import db
@@ -340,3 +356,4 @@ if __name__ == '__main__':
     db.init_app(app)
     mail.init_app(app)
     app.run(port=5000, debug=True)
+

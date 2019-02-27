@@ -26,3 +26,13 @@ def reset_password(email, token):
                        {}account/reset/{}".format(URL, token)
                   )
     mail.send(msg)
+
+
+def overdue_item_email(email, message, timeframe):
+    msg = Message(subject="Your 3W item is due {}".format(timeframe),
+                  sender="Calsta 3W Manager",
+                  recipients=[email],
+                  body=message
+                  )
+    print(msg)
+   # mail.send(msg)

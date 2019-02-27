@@ -9,7 +9,8 @@ app_settings = {
                                             ),
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'SESSION_TYPE': 'filesystem',
-    'PERMANENT_SESSION_LIFETIME': (1 * 60 * 60)
+    'PERMANENT_SESSION_LIFETIME': (1 * 60 * 60),
+    'SESSION_PERMANENT': False
 }
 
 mail_settings = {

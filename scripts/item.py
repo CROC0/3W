@@ -48,13 +48,17 @@ class ItemModel(db.Model):
         return cls.query.filter_by(id=_id).first()
 
     @classmethod
-    def listItems(cls, _id):
+    def listItems(cls):
+        return cls.query.all()
+
+    @classmethod
+    def listWhoItems(cls, _id):
         items = cls.query.filter_by(who_id=_id).all()
         subordinates = UserModel.find_subordinate_list(_id)
 
         for person in subordinates:
             if person:
-                items = items + cls.listItems(person)
+                items = items + cls.listWhoItems(person)
         return items
 
     @classmethod
@@ -64,6 +68,15 @@ class ItemModel(db.Model):
     @classmethod
     def listItem(cls, item):
         return cls.query.filter_by(id=item).all()
+
+    @classmethod
+    def listOverdueItems(cls):
+        items = cls.query.all()
+        overdue_items = []
+        for item in items:
+            if datetime.strptime(item.when, '%Y-%m-%d') <= datetime.now():
+                overdue_items.append(item)
+        return overdue_items
 
     def check_status(self):
         if self.complete:

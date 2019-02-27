@@ -3,4 +3,4 @@ Flask-SQLAlchemy
 uwsgi
 psycopg2
 Flask-Mail
-schedule
+apscheduler
