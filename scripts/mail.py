@@ -16,7 +16,7 @@ mail_settings = {
 }
 
 
-def verify_user(r, uuid):
+def verify_user_email(r, uuid):
     msg = Message(subject="Please verify your email",
                   sender="Calsta 3W Manager",
                   recipients=[r],

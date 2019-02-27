@@ -1,7 +1,8 @@
 from functools import wraps
-from flask import redirect, session
-
+from flask import redirect, session, flash
 from db import db
+
+from scripts.mail import verify_user_email
 
 
 def login_required(f):
@@ -38,8 +39,20 @@ class UserModel(db.Model):
     def __repr__(self):
         return self.name
 
+    def json(self):
+        return {
+            'username': self.username,
+            'name': self.name,
+            'supervisor': self.supervisor,
+            'verified': self.verified
+        }
+
     def save_to_db(self):
         db.session.add(self)
+        db.session.commit()
+
+    def delete_from_db(self):
+        db.session.delete(self)
         db.session.commit()
 
     @classmethod
@@ -67,3 +80,15 @@ class UserModel(db.Model):
     @classmethod
     def listUsers(cls):
         return cls.query.all()
+
+
+def verify_user(username, ts):
+    user = UserModel.find_by_username(username)
+    uuid = ts.dumps(user.username, salt='email-confirm-key')
+    try:
+        verify_user_email(user.username, uuid)
+    except Exception:
+        flash('Something went wrong and the user was not created, \
+                please try again', 'danger')
+        return redirect('/register')
+    return None

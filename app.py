@@ -9,12 +9,12 @@ from flask import (
                    session)
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 
-from scripts.login import UserModel, login_required
+from scripts.login import UserModel, login_required, verify_user
 from scripts.item import ItemModel
-from scripts.mail import verify_user, reset_password, mail_settings, mail
+from scripts.mail import reset_password, mail_settings, mail
 
 
 app = Flask(__name__)
@@ -57,21 +57,20 @@ def login():
         password = request.form.get("password")
         # Ensure username was submitted
         if not name:
-            flash("Username is not entered", 'error')
+            flash("Username is not entered", 'danger')
             return render_template("/login.html")
         elif not password:
-            flash("Password is not entered", 'error')
+            flash("Password is not entered", 'danger')
             return render_template("/account/login.html")
 
         user = UserModel.find_by_username(name)
 
         if not user or not check_password_hash(user.password, password):
-            flash("username or password not correct", 'error')
+            flash("username or password not correct", 'danger')
             return render_template("/account/login.html")
 
         # Remember which user has logged in
         session["user_id"] = user.id
-
         # Redirect user to home page
         return redirect("/")
 
@@ -103,17 +102,17 @@ def register():
         supervisor = request.form.get("supervisor")
         # ensure username is not blank
         if not username:
-            flash("Please enter an email address as your username", 'error')
+            flash("Please enter an email address as your username", 'danger')
             return redirect('/register')
         # ensure password is not blank
         elif not password:
-            flash("Please provide a valid password", 'error')
+            flash("Please provide a valid password", 'danger')
             return redirect('/register')
         elif not name:
-            flash("Please provide a valid name", 'error')
+            flash("Please provide a valid name", 'danger')
             return redirect('/register')
         elif not supervisor:
-            flash("Please provide a valid supervisor", 'error')
+            flash("Please provide a valid supervisor", 'danger')
             return redirect('/register')
 
         password = generate_password_hash(password)
@@ -122,24 +121,17 @@ def register():
 
         if user.find_by_username(username):
             flash("Username already exists, please log in with your email",
-                  'error')
+                  'danger')
             return redirect('/register')
 
-        uuid = ts.dumps(user.username, salt='email-confirm-key')
-
-        try:
-            verify_user(user.username, uuid)
-        except Exception:
-            flash('Something went wrong and the user was not created, \
-                   please try again', 'error')
-            return redirect('/register')
-            
         # adds user to the database
         try:
             user.save_to_db()
         except Exception:
-            flash("something went wrong, please try again", 'error')
+            flash("something went wrong, please try again", 'danger')
             return redirect('/register')
+
+        verify_user(user.username, ts)
 
         # remembers the user id in sessions to allow access to other pages.
         session["user_id"] = user.id
@@ -223,8 +215,21 @@ def newitem():
 
 @app.route("/verify/<string:token>", methods=["GET", "POST"])
 def verify(token):
+    try:
+        email = ts.loads(token, salt="email-confirm-key", max_age=86400)
+    except SignatureExpired:
+        email = ts.loads(token, salt="email-confirm-key")
+        user = UserModel.find_by_username(email)
 
-    email = ts.loads(token, salt="email-confirm-key", max_age=86400)
+        verify_user(user.username, ts)
+
+        flash("The link has expired \
+               a new email will be sent to your email address", 'danger')
+        return redirect('/')
+    except Exception:
+        flash("Something went wrong \
+               please contact support for assistance", 'danger')
+        return redirect('/')
 
     user = UserModel.find_by_username(email)
 
@@ -232,11 +237,8 @@ def verify(token):
         user.verified = True
         user.save_to_db()
 
-        flash("Thank you for registering your email", 'message')
-        return redirect('/')
-    else:
-        flash("The link has expired, please try again", 'message')
-        return redirect('/')
+    flash("Thank you for registering your email", 'success')
+    return redirect('/')
 
 
 @app.route("/reset", methods=["GET", "POST"])
@@ -289,6 +291,48 @@ def password_confirmed():
         return redirect('/')
 
     return redirect('/')
+
+
+@app.route('/account', methods=["GET", "POST"])
+@login_required
+def account():
+    user = UserModel.find_by_id(session["user_id"])
+
+    print(user.json())
+    return render_template('/account/account.html', user=user.json())
+
+@app.route("/account/delete", methods=["GET", "POST"])
+@login_required
+def account_delete():
+    if request.method == "POST":
+
+        # import username and save as name
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email:
+            flash("Please enter an email address as your username", 'danger')
+            return redirect('/register')
+        # ensure password is not blank
+        elif not password:
+            flash("Please provide a valid password", 'danger')
+            return redirect('/register')
+
+        user = UserModel.find_by_username(email)
+        
+        if not user or not check_password_hash(user.password, password):
+            flash("username or password do not match", 'danger')
+            return redirect("/account/account")
+
+        # delete user to the database
+        try:
+            user.delete_from_db()
+        except Exception:
+            flash("something went wrong, please try again", 'danger')
+            return redirect('/account/account')
+
+        session.clear()
+        return redirect('/')
 
 
 if __name__ == '__main__':

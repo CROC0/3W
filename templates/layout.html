@@ -27,6 +27,7 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url_for("newitem") }}">New Item</a></li>
             </ul>
             <ul class="navbar-nav ml-auto mt-2">
+                <li class="nav-item"><a class="nav-link" href="/account">Account</a></li>
                 <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
             </ul>
             {% else %}
@@ -37,16 +38,16 @@
             {% endif %}
         </div>
     </nav>
-    {% if get_flashed_messages() %}
+    {% for message in get_flashed_messages(with_categories=True) %}
     <header>
-        <div class="alert alert-danger border text-center" role="alert">
-            {{ get_flashed_messages() | join(" ") }}
+        <div class="alert alert-{{ message[0] }} border text-center" role="alert">
+            {{ message[1] }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
     </header>
-    {% endif %}
+    {% endfor %}
 
     <main class="p-3">
         {% block main %}{% endblock %}
