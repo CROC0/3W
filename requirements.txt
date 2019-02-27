@@ -4,3 +4,4 @@ uwsgi
 psycopg2
 Flask-Mail
 apscheduler
+Flask-Session
