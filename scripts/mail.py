@@ -1,19 +1,10 @@
-import os
 from flask_mail import Mail, Message
 from flask import render_template
 
-URL = os.environ.get('HEROKU_URL', 'http://127.0.0.1:5000/')
+from scripts.config import URL
+
 
 mail = Mail()
-
-mail_settings = {
-    "MAIL_SERVER": 'smtp.gmail.com',
-    "MAIL_PORT": 465,
-    "MAIL_USE_TLS": False,
-    "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": os.environ.get('EMAIL_USER'),
-    "MAIL_PASSWORD": os.environ.get('EMAIL_PASSWORD')
-}
 
 
 def verify_user_email(r, uuid):

@@ -1,5 +1,3 @@
-import os
-
 from flask import (
                    Flask,
                    flash,
@@ -12,28 +10,17 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
-
-
+from scripts.config import app_settings, mail_settings
 from scripts.login import UserModel, login_required, verify_user
 from scripts.item import ItemModel
-from scripts.mail import reset_password, mail_settings, mail
-
+from scripts.mail import reset_password, mail
 
 app = Flask(__name__)
 
-app.config["TEMPLATES_AUTO_RELOAD"] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-                                                        'DATABASE_URL',
-                                                        'sqlite:///data.db'
-                                                        )
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.environ.get('SECRET_KEY')
-
+app.config.update(app_settings)
 app.config.update(mail_settings)
-ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
-URL = os.environ.get('HEROKU_URL', 'http://127.0.0.1:5000/')
-
+ts = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 @app.after_request
 def after_request(response):
@@ -42,13 +29,15 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
-#Session(app)
+Session(app) # noqa
+
 
 @app.route('/')
 @login_required
 def index():
 
     return render_template('index.html')
+
 
 @app.route('/account', methods=["GET", "POST"])
 @login_required
