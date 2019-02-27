@@ -7,9 +7,11 @@ from flask import (
                    render_template,
                    request,
                    session)
+from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+
 
 
 from scripts.login import UserModel, login_required, verify_user
@@ -40,6 +42,7 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
+#Session(app)
 
 @app.route('/')
 @login_required
@@ -47,8 +50,15 @@ def index():
 
     return render_template('index.html')
 
+@app.route('/account', methods=["GET", "POST"])
+@login_required
+def account():
+    user = UserModel.find_by_id(session["user_id"])
 
-@app.route("/login", methods=["GET", "POST"])
+    return render_template('/account/account.html', user=user.json())
+
+
+@app.route("/account/login", methods=["GET", "POST"])
 def login():
     # clear any user id
     session.clear()
@@ -58,16 +68,16 @@ def login():
         # Ensure username was submitted
         if not name:
             flash("Username is not entered", 'danger')
-            return render_template("/login.html")
+            return redirect("/account/login")
         elif not password:
             flash("Password is not entered", 'danger')
-            return render_template("/account/login.html")
+            return redirect("/account/login")
 
         user = UserModel.find_by_username(name)
 
         if not user or not check_password_hash(user.password, password):
             flash("username or password not correct", 'danger')
-            return render_template("/account/login.html")
+            return redirect("/account/login")
 
         # Remember which user has logged in
         session["user_id"] = user.id
@@ -79,7 +89,7 @@ def login():
         return render_template("/account/login.html")
 
 
-@app.route("/logout", methods=["GET", "POST"])
+@app.route("/account/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     # forget user_id
@@ -87,7 +97,7 @@ def logout():
     return redirect("/")
 
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/account/register", methods=["GET", "POST"])
 def register():
     users = UserModel.listUsers()
 
@@ -103,17 +113,17 @@ def register():
         # ensure username is not blank
         if not username:
             flash("Please enter an email address as your username", 'danger')
-            return redirect('/register')
+            return redirect('/account/register')
         # ensure password is not blank
         elif not password:
             flash("Please provide a valid password", 'danger')
-            return redirect('/register')
+            return redirect('/account/register')
         elif not name:
             flash("Please provide a valid name", 'danger')
-            return redirect('/register')
+            return redirect('/account/register')
         elif not supervisor:
             flash("Please provide a valid supervisor", 'danger')
-            return redirect('/register')
+            return redirect('/account/register')
 
         password = generate_password_hash(password)
 
@@ -122,7 +132,7 @@ def register():
         if user.find_by_username(username):
             flash("Username already exists, please log in with your email",
                   'danger')
-            return redirect('/register')
+            return redirect('/account/register')
 
         # adds user to the database
         try:
@@ -139,6 +149,124 @@ def register():
         return redirect('/')
     else:
         return render_template('/account/register.html', users=users)
+
+
+@app.route("/account/verify/<string:token>", methods=["GET", "POST"])
+def verify(token):
+    try:
+        email = ts.loads(token, salt="email-confirm-key", max_age=86400)
+    except SignatureExpired:
+        email = ts.loads(token, salt="email-confirm-key")
+        user = UserModel.find_by_username(email)
+
+        verify_user(user.username, ts)
+
+        flash("The link has expired \
+               a new email will be sent to your email address", 'danger')
+        return redirect('/')
+    except Exception:
+        flash("Something went wrong \
+               please contact support for assistance", 'danger')
+        return redirect('/')
+
+    user = UserModel.find_by_username(email)
+
+    if user:
+        user.verified = True
+        user.save_to_db()
+
+    flash("Thank you for registering your email", 'success')
+    return redirect('/')
+
+
+@app.route("/account/reset", methods=["GET", "POST"])
+def password_reset_request():
+    if request.method == "POST":
+        email = request.form.get("email")
+        token = ts.dumps(email, salt='recovery-key')
+
+        reset_password(email, token)
+        return "Please check your email for reset url"
+    else:
+        return render_template("/account/reset.html")
+
+
+@app.route("/account/reset/<string:token>")
+def password_reset(token):
+    session.clear()
+    try:
+        email = ts.loads(token, salt="recovery-key", max_age=86400)
+    except Exception:
+        flash("The token has expired, please try reset your password again",
+              'danger')
+        return redirect('/account/login')
+
+    user = UserModel.find_by_username(email)
+
+    if not user.verified:
+        flash('Your account must be verified', 'danger')
+        redirect('/')
+
+    return render_template('/account/passwordconfirmed.html', username=email)
+
+
+@app.route("/account/passwordconfirmed", methods=["GET", "POST"])
+def password_confirmed():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        hpassword = generate_password_hash(password)
+
+        user = UserModel.find_by_username(email)
+
+        if not user.verified:
+            flash('Sorry your email was not verified.')
+            return redirect('/')
+
+        user.password = hpassword
+        user.save_to_db()
+
+        session["user_id"] = user.id
+
+        flash("Password successfully changed", 'success')
+        return redirect('/')
+
+    return redirect('/')
+
+
+@app.route("/account/delete", methods=["GET", "POST"])
+@login_required
+def account_delete():
+    if request.method == "POST":
+
+        # import username and save as name
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email:
+            flash("Please enter an email address as your username", 'danger')
+            return redirect('/account/register')
+        # ensure password is not blank
+        elif not password:
+            flash("Please provide a valid password", 'danger')
+            return redirect('/account/register')
+
+        user = UserModel.find_by_username(email)
+
+        if not user or not check_password_hash(user.password, password):
+            flash("username or password do not match", 'danger')
+            return redirect("/account")
+
+        # delete user to the database
+        try:
+            user.delete_from_db()
+        except Exception:
+            flash("something went wrong, please try again", 'danger')
+            return redirect('/account')
+
+        session.clear()
+        return redirect('/')
 
 
 @app.route("/manager", methods=["GET", "POST"])
@@ -211,128 +339,6 @@ def newitem():
     else:
         users = UserModel.listUsers()
         return render_template("/newitem.html", who=user, users=users)
-
-
-@app.route("/verify/<string:token>", methods=["GET", "POST"])
-def verify(token):
-    try:
-        email = ts.loads(token, salt="email-confirm-key", max_age=86400)
-    except SignatureExpired:
-        email = ts.loads(token, salt="email-confirm-key")
-        user = UserModel.find_by_username(email)
-
-        verify_user(user.username, ts)
-
-        flash("The link has expired \
-               a new email will be sent to your email address", 'danger')
-        return redirect('/')
-    except Exception:
-        flash("Something went wrong \
-               please contact support for assistance", 'danger')
-        return redirect('/')
-
-    user = UserModel.find_by_username(email)
-
-    if user:
-        user.verified = True
-        user.save_to_db()
-
-    flash("Thank you for registering your email", 'success')
-    return redirect('/')
-
-
-@app.route("/reset", methods=["GET", "POST"])
-def password_reset_request():
-    if request.method == "POST":
-        email = request.form.get("email")
-        token = ts.dumps(email, salt='recovery-key')
-
-        reset_password(email, token)
-        return "Please check your email for reset url"
-    else:
-        return render_template("/account/reset.html")
-
-
-@app.route("/reset/<string:token>")
-def password_reset(token):
-    email = ts.loads(token, salt="recovery-key", max_age=86400)
-
-    user = UserModel.find_by_username(email)
-
-    if not user:
-        return "your email does not exist"
-
-    if not user.verified:
-        return "your email must be verified"
-
-    return render_template('/account/passwordreset.html', username=email)
-
-
-@app.route("/passwordconfirmed", methods=["GET", "POST"])
-def password_confirmed():
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        hpassword = generate_password_hash(password)
-
-        user = UserModel.find_by_username(email)
-
-        if not user.verified:
-            flash('Sorry your email was not verified.')
-            return redirect('/')
-
-        user.password = hpassword
-        user.save_to_db()
-
-        session["user_id"] = user.id
-
-        flash("Password successfully changed", 'message')
-        return redirect('/')
-
-    return redirect('/')
-
-
-@app.route('/account', methods=["GET", "POST"])
-@login_required
-def account():
-    user = UserModel.find_by_id(session["user_id"])
-
-    print(user.json())
-    return render_template('/account/account.html', user=user.json())
-
-@app.route("/account/delete", methods=["GET", "POST"])
-@login_required
-def account_delete():
-    if request.method == "POST":
-
-        # import username and save as name
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        if not email:
-            flash("Please enter an email address as your username", 'danger')
-            return redirect('/register')
-        # ensure password is not blank
-        elif not password:
-            flash("Please provide a valid password", 'danger')
-            return redirect('/register')
-
-        user = UserModel.find_by_username(email)
-        
-        if not user or not check_password_hash(user.password, password):
-            flash("username or password do not match", 'danger')
-            return redirect("/account/account")
-
-        # delete user to the database
-        try:
-            user.delete_from_db()
-        except Exception:
-            flash("something went wrong, please try again", 'danger')
-            return redirect('/account/account')
-
-        session.clear()
-        return redirect('/')
 
 
 if __name__ == '__main__':

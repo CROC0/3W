@@ -10,7 +10,7 @@
 
 
 
-<form action="/login" method="post" class="px-4 py-3" id="form">
+<form action="/account/login" method="post" class="px-4 py-3" id="form">
     <div class="form-group">
         <input type="email" class="form-control" id="email" placeholder="email@example.com" name="username">
         <div style="color:red" id="emailvalidator"></div>
@@ -28,8 +28,8 @@
     <button type="submit" class="btn btn-primary">Sign in</button>
 </form>
 <div class="dropdow n-divider"></div>
-<a class="dropdown-item" href="/register">New around here? Sign up</a>
-<a class="dropdown-item" href="/reset">Forgot password?</a>
+<a class="dropdown-item" href="/account/register">New around here? Sign up</a>
+<a class="dropdown-item" href="/account/reset">Forgot password?</a>
 
 <script>
     $(document).ready(function () {
